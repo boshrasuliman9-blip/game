@@ -116,15 +116,14 @@ function sfxLevel()  { beep(523,'sine',.18,.3); beep(659,'sine',.18,.3,.18); bee
 function sfxWin()    { beep(523,'sine',.15,.3); beep(659,'sine',.15,.3,.15); beep(784,'sine',.15,.3,.3); beep(1047,'sine',.4,.35,.45); }
 
 /* ── game state ── */
-var TIM=null, colorOn=false, paused=false, total=0, levelStars=0;
+var TIM=null, colorOn=false, paused=false, total=0, levelStars=0, currentLevel=0;
 var LEVELS=[
   {n:1,hold:2500,gap:1500},{n:2,hold:2000,gap:1300},
   {n:3,hold:1400,gap:1000},{n:4,hold:900,gap:700},{n:5,hold:600,gap:500}
 ];
 var PER=3, NAMES=["الأولى","الثانية","الثالثة","الرابعة","الخامسة"];
 var COLORS={red:"#E24B4A",green:"#5AAA2A"};
-function li() { return Math.min(Math.floor(total/PER), LEVELS.length-1); }
-function lv() { return LEVELS[li()]; }
+function lv() { return LEVELS[currentLevel]; }
 
 function stars(n) {
   var r=document.getElementById('stars-row'); r.innerHTML='';
@@ -140,7 +139,7 @@ function stars(n) {
 /* ── actions ── */
 function doStart() {
   ac(); // unlock audio on user gesture
-  total=0; levelStars=0; colorOn=false; paused=false;
+  total=0; levelStars=0; colorOn=false; paused=false; currentLevel=0;
   hide('pg-start');
   hide('logo');
   show('pg-game');
@@ -178,29 +177,28 @@ function showColor() {
   var cs=['red','green'], c=cs[Math.floor(Math.random()*2)];
   document.getElementById('color-fill').style.background=COLORS[c];
   sfxColor();
-  var idx=li();
-  document.getElementById('hint').textContent = idx<=2?(c==='red'?'يمين':'يسار'):'';
-  document.getElementById('stars-label').textContent='المرحلة '+LEVELS[idx].n;
+  document.getElementById('hint').textContent = currentLevel<=2?(c==='red'?'يمين':'يسار'):'';
+  document.getElementById('stars-label').textContent='المرحلة '+LEVELS[currentLevel].n;
   stars(levelStars); sfxStar();
   TIM=setTimeout(function(){
     colorOn=false;
     document.getElementById('color-fill').style.background='#e8e6de';
     document.getElementById('hint').textContent='';
-    if(levelStars>=PER){ paused=true; TIM=setTimeout(doLevelEnd,3500); }
+    if(levelStars>=PER){ paused=true; doLevelEnd(); }
     else nextRound();
   }, lv().hold);
 }
 
 function doLevelEnd() {
-  var idx=li();
-  if(total>=LEVELS.length*PER){ doWin(); return; }
-  var msg='مبروك! لقد اجتزت المرحلة '+NAMES[idx-1]+' بنجاح 🎉';
+  if(currentLevel>=LEVELS.length-1){ doWin(); return; }
+  var msg='مبروك! لقد اجتزت المرحلة '+NAMES[currentLevel]+' بنجاح 🎉';
   var ann=document.getElementById('announce');
   ann.textContent=msg; ann.style.display='block'; sfxLevel();
   TIM=setTimeout(function(){
     ann.style.display='none';
-    levelStars=0; paused=false; stars(0);
-    document.getElementById('stars-label').textContent='المرحلة '+LEVELS[idx].n;
+    currentLevel++;
+    total=0; levelStars=0; paused=false; stars(0);
+    document.getElementById('stars-label').textContent='المرحلة '+LEVELS[currentLevel].n;
     nextRound();
   },3000);
 }
@@ -214,7 +212,7 @@ function tapGame() {
   clearTimeout(TIM); colorOn=false;
   document.getElementById('color-fill').style.background='#e8e6de';
   document.getElementById('hint').textContent='';
-  if(levelStars>=PER){ paused=true; TIM=setTimeout(doLevelEnd,3500); }
+  if(levelStars>=PER){ paused=true; doLevelEnd(); }
   else nextRound();
 }
 
